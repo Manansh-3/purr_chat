@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "27337715108",
+    "project_id": "purrchatorigin",
+    "storage_bucket": "purrchatorigin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:27337715108:android:785e471ed65a008660e531",
+        "android_client_info": {
+          "package_name": "com.example.purr_chat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "27337715108-8pubdiulb9uf1ancssqi6kat39t3oudr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.purr_chat",
+            "certificate_hash": "38f303c75b4c5b0d2f9039603ff268e8b8d99de4"
+          }
+        },
+        {
+          "client_id": "27337715108-mlpbfjir7f6mr95j70tfdadmisqimpgg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQ6lEL7esOupvCGQEVPewm-uGObt64oBU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "27337715108-mlpbfjir7f6mr95j70tfdadmisqimpgg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
