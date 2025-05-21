@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chat_app/core/constants/strings.dart';
 import 'package:chat_app/core/constants/colors.dart';
 
@@ -36,27 +36,31 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  Timer? _timer;
   late final String randomComment;
 
   @override
   void initState() {
     super.initState();
 
-    // Pick a random comment
+    // Random splash text
     final random = Random();
     randomComment = loadingComments[random.nextInt(loadingComments.length)];
 
-    // Start the timer
-    _timer = Timer(const Duration(seconds: 5), () {
-      Navigator.pushNamed(context, signUp);
-    });
+    _checkAuth();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  Future<void> _checkAuth() async {
+    await Future.delayed(const Duration(seconds: 2)); // slight delay for animation
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    
+
+    if (user != null) {
+      Navigator.pushNamed(context, home);
+    } else {
+      Navigator.pushNamed(context, signUp);
+    }
   }
 
   @override

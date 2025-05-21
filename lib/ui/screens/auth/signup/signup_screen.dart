@@ -1,5 +1,6 @@
 import 'package:chat_app/core/constants/colors.dart';
 import 'package:chat_app/core/constants/styles.dart';
+import 'package:chat_app/services/firestore_service.dart';
 import 'package:chat_app/ui/widgets/sign_up_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -26,13 +27,20 @@ class _SignupScreenState extends State<SignupScreen> {
 
     final user = await _authService.signInWithGoogle();
 
+    final name = user?.displayName ?? 'Unknown Cat';
+
+    await FirestoreService().createUserDocument(
+      bio: "Meowlo, I am $name",
+      username: name,
+    );
+
     setState(() {
       _isLoading = false;
     });
 
     if (user != null) {
       // Signed in successfully, navigate to home or next screen
-      Navigator.pushReplacementNamed(context, '/splash');
+      Navigator.pushReplacementNamed(context, '/home');
       print('User signed in: ${user.email}');
     } else {
       // Sign in failed or canceled — show a message or just stay here
