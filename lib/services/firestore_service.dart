@@ -18,12 +18,17 @@ class FirestoreService {
     if (!docSnapshot.exists) {
       await userDoc.set({
         'uid': user.uid,
-        'email': user.email,
+        'email': user.email ?? '',
         'username': username,
         'bio': bio,
         'createdAt': FieldValue.serverTimestamp(),
-        'profilePicUrl': '',
-        'friends': [],
+        'PfpUrl': '',
+        'userFriends': [],
+      })
+      .then((_) {
+        print('User document created successfully');
+      }).catchError((error) {
+        print('Failed to create user document: $error');
       });
     }
   }
