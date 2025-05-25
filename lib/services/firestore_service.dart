@@ -4,10 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> createUserDocument({
-    required String username,
-    required String bio,
-  }) async {
+  Future<void> createUserDocument() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -19,16 +16,15 @@ class FirestoreService {
       await userDoc.set({
         'uid': user.uid,
         'email': user.email ?? '',
-        'username': username,
-        'bio': bio,
+        'username': user.displayName ?? '',
+        'bio': 'meowlow!, i am ${user.displayName}',
         'createdAt': FieldValue.serverTimestamp(),
-        'PfpUrl': '',
-        'userFriends': [],
+        'PfpUrl': user.photoURL ?? '',
       })
       .then((_) {
-        print('User document created successfully');
+        print('account created successfully');
       }).catchError((error) {
-        print('Failed to create user document: $error');
+        print('Failed to create user account: $error');
       });
     }
   }
