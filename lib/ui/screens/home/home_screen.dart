@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chat_app/core/constants/strings.dart';
 import 'package:chat_app/ui/screens/home/friend_search.dart';
+import 'package:chat_app/ui/screens/home/chats/chat_screen.dart';
+import 'package:chat_app/ui/screens/auth/signup/signup_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    fetchFriends();
+    _checkAuthAndFetchFriends();
   }
 
   void _onItemTapped(int index) {
@@ -37,17 +39,26 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> fetchFriends() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) {
-      setState(() {
-        _friends = [];
-        _isLoading = false;
+  Future<void> _checkAuthAndFetchFriends() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      // User is not logged in → Navigate to signup and remove HomeScreen from stack
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SignupScreen()),
+        );
       });
       return;
     }
 
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+    await fetchFriends(user.uid);
+  }
+
+  Future<void> fetchFriends(String uid) async {
+    final userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
     final friendIds = List<String>.from(userDoc.data()?['friends'] ?? []);
 
     if (friendIds.isEmpty) {
@@ -58,8 +69,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final friendDocs = await Future.wait(friendIds.map((id) =>
-        FirebaseFirestore.instance.collection('users').doc(id).get()));
+    final friendDocs = await Future.wait(friendIds
+        .map((id) => FirebaseFirestore.instance.collection('users').doc(id).get()));
 
     final friends = friendDocs
         .where((doc) => doc.exists)
@@ -87,7 +98,8 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               setState(() => _isLoading = true);
-              fetchFriends();
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid != null) fetchFriends(uid);
             },
           ),
           IconButton(
@@ -119,7 +131,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: Text(friend['username']),
                       subtitle: Text(friend['bio']),
                       onTap: () {
-                        // Navigate to DM screen or similar
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              otherUserId: friend['uid'],
+                              otherUsername: friend['username'],
+                            ),
+                          ),
+                        );
                       },
                     );
                   },
