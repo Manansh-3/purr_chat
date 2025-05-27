@@ -5,6 +5,7 @@ import 'package:chat_app/ui/screens/home/friend_request_pending';
 import 'package:chat_app/ui/screens/home/home_screen.dart';
 import 'package:chat_app/ui/screens/home/profile/profile_page.dart';
 import 'package:chat_app/ui/screens/splash_screen.dart';
+import 'package:chat_app/ui/screens/test_page.dart';
 import 'package:flutter/material.dart';
 
 class RouteUtils {
@@ -22,6 +23,8 @@ class RouteUtils {
        return MaterialPageRoute(builder: (context) => const ProfileScreen());
        case pendingRequests:
        return MaterialPageRoute(builder: (context) => const IncomingRequestsPage());
+       case test:
+       return MaterialPageRoute(builder: (context) => const TestPage());
       default:
       return MaterialPageRoute(builder: (context) => const Scaffold(body: Center(child: Text("no route found"),),));
       
