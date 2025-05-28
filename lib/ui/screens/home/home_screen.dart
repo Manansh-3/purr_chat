@@ -1,4 +1,4 @@
-
+import 'package:chat_app/core/constants/colors.dart';
 import 'package:chat_app/ui/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _checkAuthAndFetchFriends();
-    checkPendingRequests(); 
+    checkPendingRequests();
   }
 
   void setupRealtimeMessageListeners() async {
@@ -108,22 +108,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> checkPendingRequests() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  final snapshot = await FirebaseFirestore.instance
-      .collection('friend_requests')
-      .where('to', isEqualTo: user.uid)
-      .where('status', isEqualTo: 'pending')
-      .get();
+    final snapshot = await FirebaseFirestore.instance
+        .collection('friend_requests')
+        .where('to', isEqualTo: user.uid)
+        .where('status', isEqualTo: 'pending')
+        .get();
 
-  if (mounted) {
-    setState(() {
-      _hasPendingRequests = snapshot.docs.isNotEmpty;
-    });
+    if (mounted) {
+      setState(() {
+        _hasPendingRequests = snapshot.docs.isNotEmpty;
+      });
+    }
   }
-}
- 
+
   Future<void> fetchFriends(String uid) async {
     try {
       final userDoc =
@@ -183,6 +183,33 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: primary,
+              ),
+              child: Text(
+                'Purr_chat v1.0.0',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+           
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('user preferences'),
+              onTap: ()  {
+                Navigator.pushNamed(
+                  context,
+                  userPreferences
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         title: const Text('Chat App'),
         actions: [
@@ -192,36 +219,34 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() => _isLoading = true);
               final uid = FirebaseAuth.instance.currentUser?.uid;
               if (uid != null) {
-  fetchFriends(uid);
-  checkPendingRequests();
-}
-
+                fetchFriends(uid);
+                checkPendingRequests();
+              }
             },
           ),
           Stack(
-  children: [
-    IconButton(
-      icon: const Icon(Icons.notifications),
-      onPressed: () {
-        Navigator.pushNamed(context, pendingRequests);
-      },
-    ),
-    if (_hasPendingRequests)
-      Positioned(
-        right: 8,
-        top: 8,
-        child: Container(
-          width: 12,
-          height: 12,
-          decoration: const BoxDecoration(
-            color: Colors.red,
-            shape: BoxShape.circle,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications),
+                onPressed: () {
+                  Navigator.pushNamed(context, pendingRequests);
+                },
+              ),
+              if (_hasPendingRequests)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ),
-      ),
-  ],
-),
-
         ],
       ),
       body: _isLoading
@@ -252,18 +277,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           .where('receiverId', isEqualTo: currentUserId)
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const ListTile(title: Text('Loading...'));
-                        }
-
-                        if (snapshot.hasError) {
-                          return ListTile(
-                            title: Text(friend['username']),
-                            subtitle: const Text('Error loading messages'),
-                          );
-                        }
-
                         int unreadCount = snapshot.data?.docs.length ?? 0;
 
                         return ListTile(
@@ -306,7 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           title: Text(friend['username']),
                           subtitle: Text(friend['bio']),
                           onTap: () {
-                            clearChatNotification(chatId); // ✅ clear on tap
+                            clearChatNotification(chatId);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -331,7 +344,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: Icon(
                 Icons.home,
-                color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
+                color: _selectedIndex == 0 ? primary : Colors.grey,
               ),
               onPressed: () => _onItemTapped(0),
             ),
@@ -339,7 +352,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: Icon(
                 Icons.person,
-                color: _selectedIndex == 2 ? Colors.blue : Colors.grey,
+                color: _selectedIndex == 2 ? primary : Colors.grey,
               ),
               onPressed: () => _onItemTapped(2),
             ),

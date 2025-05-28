@@ -12,3 +12,4 @@ const wrapper = "/wrapper";
 const profile = "/profile";
 const pendingRequests = "/pendingRequests";
 const test = "/test";
+const userPreferences = "/userPreferences";

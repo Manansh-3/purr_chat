@@ -34,12 +34,14 @@ const loadingComments = [
     final randomComment = loadingComments[random.nextInt(loadingComments.length)];
 
 class Loader extends StatelessWidget {
-  const Loader({super.key});
+  const Loader({super.key, this.backgroundColor});
+
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

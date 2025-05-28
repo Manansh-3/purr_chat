@@ -38,7 +38,7 @@ class SignUpButton extends StatelessWidget {
                  return Colors.white;
                 },
               ),
-              backgroundColor: WidgetStateProperty.all(primaryBlack.withOpacity(0.95)),
+              backgroundColor: WidgetStateProperty.all(darkPrimary.withOpacity(0.95)),
               padding: WidgetStateProperty.all(
                 const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
               ),

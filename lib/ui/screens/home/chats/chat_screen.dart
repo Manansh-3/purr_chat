@@ -6,6 +6,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
   final String otherUsername;
@@ -23,14 +26,16 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late final String chatId;
-  final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  
+late final String chatId;
+final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+final AudioPlayer _audioPlayer = AudioPlayer();
 
-  void playNotificationSound() async {
-  await _audioPlayer.play(AssetSource('sfx/mixkit-sweet-kitty-meow-93.wav'));
-  print("Notification sound played");
+final String messageRecieve = "sfx/mixkit-sweet-kitty-meow-93.wav";
+
+bool chatSoundsEnabled = true; // Default value, will be loaded from preferences
+
+void playNotificationSound() async {
+  await _audioPlayer.play(AssetSource(messageRecieve));
 }
 
 
@@ -38,6 +43,13 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     chatId = getChatId(currentUserId, widget.otherUserId);
+
+    // Load chat sound preference asynchronously
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        chatSoundsEnabled = prefs.getBool('chatSoundsEnabled') ?? true;
+      });
+    });
 
     // Mark unread messages as read every few seconds (in real apps, use listeners or logic on snapshot)
     Future.delayed(Duration(milliseconds: 500), () => markMessagesAsRead());
@@ -144,7 +156,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       final isUnread = latest['isRead'] == false;
 
   // Play sound only for incoming and unread messages
-  if (isIncoming && isUnread) {
+  if (isIncoming && isUnread && chatSoundsEnabled) {
     playNotificationSound();
   }
 }

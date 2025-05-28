@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:chat_app/ui/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,13 +34,18 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
   }
 
   Future<void> _fetchUsers() async {
-    final snapshot = await FirebaseFirestore.instance.collection('users').get();
-    final users = snapshot.docs.where((doc) => doc.id != currentUserId).toList();
-    setState(() {
-      allUsers = users;
-      filteredUsers = users;
-      isLoading = false;
-    });
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('users').get();
+      final users = snapshot.docs.where((doc) => doc.id != currentUserId).toList();
+      setState(() {
+        allUsers = users;
+        filteredUsers = users;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      // You can also show a snackbar or error dialog here if you want.
+    }
   }
 
   void _filterUsers() {
@@ -68,6 +75,7 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return ListTile(
+            leading: CircleAvatar(child: CircularProgressIndicator(strokeWidth: 2)),
             title: Text(username),
             trailing: const SizedBox(
               height: 20,
@@ -79,6 +87,11 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
 
         if (!snapshot.hasData || snapshot.hasError) {
           return ListTile(
+            leading: CircleAvatar(
+              backgroundImage: (profilePic != null && profilePic.isNotEmpty)
+                  ? NetworkImage(profilePic)
+                  : const AssetImage('assets/default_profile.png') as ImageProvider,
+            ),
             title: Text(username),
             trailing: const Icon(Icons.error, color: Colors.red),
           );
@@ -94,15 +107,17 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
         if (isFriend) {
           icon = Icons.check;
           tooltip = 'Already friends';
+          onPressed = null;
         } else if (status == 'pending') {
           icon = Icons.hourglass_top;
           tooltip = 'Request pending';
+          onPressed = null;
         } else {
           icon = Icons.person_add;
           tooltip = 'Add Friend';
           onPressed = () async {
             await FriendService.sendFriendRequest(currentUserId, userId);
-            setState(() {}); // Refresh the tile
+            setState(() {}); // Refresh UI after sending request
           };
         }
 
@@ -125,38 +140,72 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Add Friend'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _searchController,
-            decoration: const InputDecoration(
-              labelText: 'Search by username',
-              prefixIcon: Icon(Icons.search),
+    return Stack(
+      children: [
+        // The blurred background:
+        BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: Container(
+            color: Colors.black.withOpacity(0), // transparent but captures taps
+          ),
+        ),
+
+        // Centered dialog
+        Center(
+          child: Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 16,
+            backgroundColor: Colors.white,
+            child: Container(
+              width: MediaQuery.of(context).size.width * 1,
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+                minHeight: 300,
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Text(
+                    'Add Friend',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Search by username',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // User list or loading indicator
+                  Expanded(
+                    child: isLoading
+                        ? const Center(child: Loader(backgroundColor: Colors.white,))
+                        : filteredUsers.isEmpty
+                            ? const Center(child: Text('No users found'))
+                            : ListView.builder(
+                                itemCount: filteredUsers.length,
+                                itemBuilder: (context, index) =>
+                                    _buildUserTile(filteredUsers[index]),
+                              ),
+                  ),
+
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('Close'),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          isLoading
-              ? const CircularProgressIndicator()
-              : SizedBox(
-                  height: 300,
-                  width: double.maxFinite,
-                  child: filteredUsers.isEmpty
-                      ? const Center(child: Text('No users found'))
-                      : ListView.builder(
-                          itemCount: filteredUsers.length,
-                          itemBuilder: (context, index) =>
-                              _buildUserTile(filteredUsers[index]),
-                        ),
-                ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          child: const Text('Close'),
-          onPressed: () => Navigator.of(context).pop(),
         ),
       ],
     );

@@ -4,6 +4,7 @@ import 'package:chat_app/ui/screens/auth/signup/signup_screen.dart';
 import 'package:chat_app/ui/screens/home/friend_request_pending';
 import 'package:chat_app/ui/screens/home/home_screen.dart';
 import 'package:chat_app/ui/screens/home/profile/profile_page.dart';
+import 'package:chat_app/ui/screens/home/settings/user_preferences/user_preferences_screen.dart';
 import 'package:chat_app/ui/screens/splash_screen.dart';
 import 'package:chat_app/ui/screens/test_page.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,8 @@ class RouteUtils {
        return MaterialPageRoute(builder: (context) => const IncomingRequestsPage());
        case test:
        return MaterialPageRoute(builder: (context) => const TestPage());
+       case userPreferences:
+       return MaterialPageRoute(builder: (context) => const UserPreferencesScreen());
       default:
       return MaterialPageRoute(builder: (context) => const Scaffold(body: Center(child: Text("no route found"),),));
       

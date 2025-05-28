@@ -129,7 +129,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontStyle: FontStyle.italic,
-                    color: complimentWhite,
+                    color: lightPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -266,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: const Icon(Icons.save),
                     label: const Text('Save Changes'),
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: complimentWhite,
+                      foregroundColor: lightPrimary,
                       backgroundColor: primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
