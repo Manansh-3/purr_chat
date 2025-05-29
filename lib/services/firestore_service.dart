@@ -19,6 +19,8 @@ class FirestoreService {
         'username': user.displayName ?? '',
         'bio': 'meowlow!, i am ${user.displayName}',
         'createdAt': FieldValue.serverTimestamp(),
+        'status': 'online',
+        'lastActive': FieldValue.serverTimestamp(),
         'PfpUrl': user.photoURL ?? '',
       })
       .then((_) {

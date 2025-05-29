@@ -1,7 +1,7 @@
 import 'package:chat_app/core/constants/strings.dart';
 import 'package:chat_app/ui/screens/auth/login/login_screen.dart';
 import 'package:chat_app/ui/screens/auth/signup/signup_screen.dart';
-import 'package:chat_app/ui/screens/home/friend_request_pending';
+import 'package:chat_app/ui/screens/home/friend_request_pending.dart';
 import 'package:chat_app/ui/screens/home/home_screen.dart';
 import 'package:chat_app/ui/screens/home/profile/profile_page.dart';
 import 'package:chat_app/ui/screens/home/settings/user_preferences/user_preferences_screen.dart';

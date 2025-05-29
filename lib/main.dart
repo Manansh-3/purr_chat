@@ -10,6 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:chat_app/core/constants/colors.dart';
+import 'package:chat_app/services/lifecycle.dart';
+
+
+AppLifecycleReactor? lifecycleReactor;
 
 
 
@@ -51,6 +55,13 @@ try {
   }
   loadPrimaryColor();
   runApp(const ChatApp());
+
+  
+  FirebaseAuth.instance.authStateChanges().listen((user) {
+    if (user != null) {
+      lifecycleReactor ??= AppLifecycleReactor(user.uid);
+    }
+  });
 }
 
 Future<void> setupFCM() async {
