@@ -7,8 +7,7 @@ import 'package:chat_app/core/constants/strings.dart';
 import 'package:chat_app/ui/screens/home/friend_search.dart';
 import 'package:chat_app/ui/screens/home/chats/chat_screen.dart';
 import 'package:chat_app/ui/screens/auth/signup/signup_screen.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:chat_app/services/notification_service.dart';
+import 'package:chat_app/ui/widgets/friend_options_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,7 +20,6 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 1;
   List<Map<String, dynamic>> _friends = [];
   bool _isLoading = true;
-  Set<String> _notifiedChats = {};
   bool _hasPendingRequests = false;
 
   @override
@@ -29,54 +27,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkAuthAndFetchFriends();
     checkPendingRequests();
+    loadPrimaryColor();
   }
 
-  void setupRealtimeMessageListeners() async {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) return;
-    final userId = currentUser.uid;
-
-    for (var friend in _friends) {
-      final friendId = friend['uid'];
-      final chatId = userId.compareTo(friendId) < 0
-          ? '$userId$friendId'
-          : '${friendId}_$userId';
-
-      FirebaseFirestore.instance
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .orderBy('timestamp', descending: true)
-          .limit(1)
-          .snapshots()
-          .listen((snapshot) {
-        if (snapshot.docs.isNotEmpty) {
-          final doc = snapshot.docs.first;
-          final data = doc.data();
-          final senderId = data['senderId'];
-          final isRead = data['isRead'];
-
-          if (senderId != userId && !isRead) {
-            if (!_notifiedChats.contains(chatId)) {
-              RemoteMessage testMessage = RemoteMessage(
-                notification: RemoteNotification(
-                  title: "${friend['username']}",
-                  body: data['text'] ?? 'You have a new message!',
-                ),
-                data: {'chatId': chatId},
-              );
-              NotificationService.showNotification(testMessage);
-              _notifiedChats.add(chatId);
-            }
-          }
-        }
-      });
-    }
+   void _showFriendOptions(BuildContext context, Map<String, dynamic> friend) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => FriendOptionsSheet(friend: friend)
+    );
   }
 
-  void clearChatNotification(String chatId) {
-    _notifiedChats.remove(chatId);
-  }
 
   void _onItemTapped(int index) {
     setState(() => _selectedIndex = index);
@@ -169,7 +132,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _friends = friends;
           _isLoading = false;
         });
-        setupRealtimeMessageListeners();
       }
     } catch (_) {
       if (mounted) {
@@ -187,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
+             DrawerHeader(
               decoration: BoxDecoration(
                 color: primary,
               ),
@@ -213,17 +175,6 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Chat App'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              setState(() => _isLoading = true);
-              final uid = FirebaseAuth.instance.currentUser?.uid;
-              if (uid != null) {
-                fetchFriends(uid);
-                checkPendingRequests();
-              }
-            },
-          ),
           Stack(
             children: [
               IconButton(
@@ -249,21 +200,41 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: Loader())
-          : _friends.isEmpty
-              ? const Center(
-                  child: Text(
-                    'You seem alone',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-                  ),
+  body: _isLoading
+      ? const Center(child: Loader())
+      : RefreshIndicator(
+          onRefresh: () async {
+            final uid = FirebaseAuth.instance.currentUser?.uid;
+            if (uid != null) {
+              setState(() {
+                _isLoading = true;
+              });
+              await fetchFriends(uid);
+              await checkPendingRequests();
+              setState(() {
+                _isLoading = false;
+              });
+            }
+          },
+          child: _friends.isEmpty
+              ? ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(height: 200),
+                    Center(
+                      child: Text(
+                        'You seem alone',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
                 )
               : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: _friends.length,
                   itemBuilder: (context, index) {
                     final friend = _friends[index];
-                    final currentUserId =
-                        FirebaseAuth.instance.currentUser!.uid;
+                    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
                     final chatId = currentUserId.compareTo(friend['uid']) < 0
                         ? '$currentUserId${friend['uid']}'
                         : '${friend['uid']}_$currentUserId';
@@ -318,8 +289,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           title: Text(friend['username']),
                           subtitle: Text(friend['bio']),
+                          onLongPress: () => _showFriendOptions(context, friend),
                           onTap: () {
-                            clearChatNotification(chatId);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -335,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                 ),
+        ),
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         notchMargin: 8.0,

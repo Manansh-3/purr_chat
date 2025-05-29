@@ -160,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration:  BoxDecoration(
           gradient: LinearGradient(
             colors: [primary, Color.fromARGB(255, 0, 0, 0), primary],
             begin: Alignment.topLeft,

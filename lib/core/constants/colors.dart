@@ -1,8 +1,22 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+Color primary = Colors.purple; // default
 
-import 'package:flutter/painting.dart';
+final Map<String, MaterialColor> availableColors = {
+  'Blue': Colors.blue,
+  'Red': Colors.red,
+  'Green': Colors.green,
+  'Purple': Colors.purple,
+  'Orange': Colors.orange,
+};
 
-const primary = Color.fromARGB(255, 153, 0, 208);
+Future<void> loadPrimaryColor() async {
+  final prefs = await SharedPreferences.getInstance();
+  final colorName = prefs.getString('primaryColor') ?? 'purple';
+  primary = availableColors[colorName] ?? Colors.blue;
+}
+
 
 //font colors
 const whiteFont = Color.fromARGB(255, 255, 255, 255);

@@ -9,22 +9,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:chat_app/core/constants/colors.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print("💤 Background message received: ${message.messageId}");
-}
+
 
 Future<void> _requestNotificationPermission() async {
-  try {
+  
     if (await Permission.notification.isDenied) {
-      final status = await Permission.notification.request();
-      print('🔔 Notification permission status: $status');
-    } else {
-      print('🔔 Notification permission already granted.');
-    }
-  } catch (e) {
-    print('❌ Error requesting notification permission: $e');
-  }
+      await Permission.notification.request();
+    } 
+   
 }
 
 Future<void> main() async {
@@ -48,7 +42,6 @@ Future<void> main() async {
 
 try {
     await NotificationService.initialize();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
     await setupFCM(); // separate function for cleaner error handling
 
@@ -56,7 +49,7 @@ try {
     print('❌ Uncaught error during app initialization: $e');
     print('📜 Stack trace: $stack');
   }
-
+  loadPrimaryColor();
   runApp(const ChatApp());
 }
 
@@ -99,10 +92,13 @@ class ChatApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      builder: (context, child) => const MaterialApp(
+      builder: (context, child) => MaterialApp(
+        theme: ThemeData(
+    primarySwatch: primary as MaterialColor,
+  ),
         debugShowCheckedModeBanner: false,
         onGenerateRoute: RouteUtils.onGenerateRoute,
-        home: HomeScreen(),
+        home: const HomeScreen(),
       ),
     );
   }

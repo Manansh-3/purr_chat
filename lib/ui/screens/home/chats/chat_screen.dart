@@ -222,7 +222,7 @@ void playNotificationSound() async {
                   CircleAvatar(
                     backgroundColor: Colors.white,
                     child: IconButton(
-                      icon: const Icon(Icons.send, color: primary),
+                      icon:  Icon(Icons.send, color: primary),
                       onPressed: sendMessage,
                     ),
                   ),
@@ -302,7 +302,7 @@ class ChatBubble extends StatelessWidget {
               ),
             ),
             if (showSeen)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.only(top: 2, right: 4),
                 child: Text(
                   "Seen",
