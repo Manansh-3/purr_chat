@@ -1,4 +1,9 @@
+import 'dart:ui';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:chat_app/core/constants/colors.dart';
+import 'package:chat_app/ui/screens/home/settings/updates.dart';
 import 'package:chat_app/ui/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,7 +21,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _selectedIndex = 1;
   List<Map<String, dynamic>> _friends = [];
   bool _isLoading = true;
@@ -24,11 +29,77 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
-    super.initState();
+    super.initState();  
+    WidgetsBinding.instance.addObserver(this);
+  checkForForceUpdate(context); // Still call it at build-time once
     _checkAuthAndFetchFriends();
     checkPendingRequests();
     loadPrimaryColor();
   }
+
+  @override
+void dispose() {
+  WidgetsBinding.instance.removeObserver(this);
+  super.dispose();
+}
+
+Future<void> checkForForceUpdate(BuildContext context) async {
+  final configSnapshot = await FirebaseFirestore.instance
+      .collection('app_config')
+      .doc('version_control')
+      .get();
+
+  if (!configSnapshot.exists) return;
+
+  final config = configSnapshot.data()!;
+  final latestVersion = config['latest_version'];
+  final forceUpdate = true; // You can also get this dynamically from Firestore
+  final updateMessage = config['update_message'] ?? 'Please update the app.';
+
+  final packageInfo = await PackageInfo.fromPlatform();
+  final currentVersion = packageInfo.version;
+
+  if (_compareVersions(currentVersion, latestVersion) < 0 && forceUpdate) {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => WillPopScope(
+      onWillPop: () async => false, // disables back button
+      child: AlertDialog(
+        title: const Text("Update Required"),
+        content: Text(updateMessage),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Close the app
+              if (Platform.isAndroid) {
+                SystemNavigator.pop(); // or exit(0);
+              } else if (Platform.isIOS) {
+                exit(0);
+              } else {
+                exit(0);
+              }
+            },
+            child: const Text("Exit App"),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+}
+
+int _compareVersions(String current, String latest) {
+  final currentParts = current.split('.').map(int.parse).toList();
+  final latestParts = latest.split('.').map(int.parse).toList();
+  for (int i = 0; i < latestParts.length; i++) {
+    if (currentParts.length <= i || currentParts[i] < latestParts[i]) return -1;
+    if (currentParts[i] > latestParts[i]) return 1;
+  }
+  return 0;
+}
+
 
    void _showFriendOptions(BuildContext context, Map<String, dynamic> friend) {
     showModalBottomSheet(
@@ -124,6 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'username': data['username'] ?? 'Unknown',
           'bio': data['bio'] ?? '',
           'photoUrl': data['PfpUrl'] ?? '',
+          'status': data['status'] ?? 'offline', // <-- Add this line
         };
       }).toList();
 
@@ -154,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: primary,
               ),
               child: Text(
-                'Purr_chat v1.0.0',
+                'Purr_chat v2.0.0',
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
@@ -169,6 +241,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+         ListTile(
+  leading: const Icon(Icons.info_outline),
+  title: const Text('About Updates'),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => UpdatesSection()),
+    );
+  },
+),
           ],
         ),
       ),
@@ -216,96 +298,156 @@ class _HomeScreenState extends State<HomeScreen> {
               });
             }
           },
-          child: _friends.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 200),
-                    Center(
-                      child: Text(
-                        'You seem alone',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+  child: _friends.isEmpty
+      ? ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 200),
+            Center(
+              child: Text(
+                'You seem alone',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        )
+      : ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          itemCount: _friends.length,
+          itemBuilder: (context, index) {
+            final friend = _friends[index];
+            final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+            final chatId = [currentUserId, friend['uid']]..sort();
+            final consistentChatId = '${chatId[0]}_${chatId[1]}';
+            final status = friend['status'];
+            
+
+            return StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('chats')
+                  .doc(consistentChatId)
+                  .collection('messages')
+                  .where('isRead', isEqualTo: false)
+                  .where('receiverId', isEqualTo: currentUserId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                int unreadCount = snapshot.data?.docs.length ?? 0;
+
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ChatScreen(
+                          otherUserId: friend['uid'],
+                          otherUsername: friend['username'],
+                        ),
                       ),
-                    ),
-                  ],
-                )
-              : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: _friends.length,
-                  itemBuilder: (context, index) {
-                    final friend = _friends[index];
-                    final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-                    final chatId = currentUserId.compareTo(friend['uid']) < 0
-                        ? '$currentUserId${friend['uid']}'
-                        : '${friend['uid']}_$currentUserId';
-
-                    return StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('chats')
-                          .doc(chatId)
-                          .collection('messages')
-                          .where('isRead', isEqualTo: false)
-                          .where('receiverId', isEqualTo: currentUserId)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        int unreadCount = snapshot.data?.docs.length ?? 0;
-
-                        return ListTile(
-                          leading: Stack(
-                            children: [
-                              CircleAvatar(
-                                backgroundImage: friend['photoUrl'] != ''
-                                    ? NetworkImage(friend['photoUrl'])
-                                    : null,
-                                child: friend['photoUrl'] == ''
-                                    ? const Icon(Icons.person)
-                                    : null,
-                              ),
-                              if (unreadCount > 0)
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 20,
-                                      minHeight: 20,
-                                    ),
-                                    child: Text(
-                                      '$unreadCount',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          title: Text(friend['username']),
-                          subtitle: Text(friend['bio']),
-                          onLongPress: () => _showFriendOptions(context, friend),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ChatScreen(
-                                  otherUserId: friend['uid'],
-                                  otherUsername: friend['username'],
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
                     );
                   },
-                ),
+                  onLongPress: () => _showFriendOptions(context, friend),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.55),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 24,
+                                      backgroundImage: friend['photoUrl'] != ''
+                                          ? NetworkImage(friend['photoUrl'])
+                                          : null,
+                                      child: friend['photoUrl'] == ''
+                                          ? const Icon(Icons.person)
+                                          : null,
+                                    ),
+                                    if (status == 'online')
+                                      Positioned(
+                                        right: 0,
+                                        top: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(5),
+                                          decoration: BoxDecoration(
+                                            color: const Color.fromARGB(255, 0, 224, 0),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 20,
+                                            minHeight: 20,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        friend['username'],
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        friend['bio'],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.white.withOpacity(0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (unreadCount > 0)
+  Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    decoration: BoxDecoration(
+      color: Colors.red,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      '$unreadCount',
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  )
+else
+  const Icon(Icons.arrow_forward_ios_rounded,
+      size: 16, color: Colors.white70),
+
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
         ),
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),

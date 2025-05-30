@@ -1,3 +1,4 @@
+import 'package:chat_app/ui/screens/home/profile/public_profile.dart';
 import 'package:flutter/material.dart';
 import 'package:chat_app/ui/widgets/confirm_dialog.dart';
 import 'package:chat_app/ui/widgets/top_notification.dart';
@@ -67,7 +68,9 @@ class FriendOptionsSheet extends StatelessWidget {
               context,
               icon: Icons.person_outline,
               label: 'View Profile',
-              onTap: () => Navigator.of(context).pop(),
+              onTap: () => {Navigator.of(context).pop(),
+              Navigator.push(context, MaterialPageRoute(builder: (context) => PublicProfileScreen(userId: friend['uid'])))}
+                
             ),
             _buildListTile(
               context,
@@ -108,13 +111,13 @@ class FriendOptionsSheet extends StatelessWidget {
                 showDialog(
                   context: context,
                   builder: (context) => ConfirmDialog(
-                    title: 'Block User?',
-                    message: 'Blocking will prevent interactions.',
-                    confirmText: 'Block',
+                    title: 'This function is under work',
+                    message: 'will be added in the next update',
+                    confirmText: 'Okay',
                     cancelText: 'Cancel',
                     onConfirm: () {
                       Navigator.of(context).pop();
-                      TopNotification.show(context, 'User blocked');
+                      TopNotification.show(context, 'did you even read that dumbo?');
                     },
                   ),
                 );
@@ -129,13 +132,13 @@ class FriendOptionsSheet extends StatelessWidget {
                 showDialog(
                   context: context,
                   builder: (context) => ConfirmDialog(
-                    title: 'Report User?',
-                    message: 'Our team will review the report.',
-                    confirmText: 'Report',
+                    title: 'This function is under work',
+                    message: 'will be added in the next update',
+                    confirmText: 'Okay',
                     cancelText: 'Cancel',
                     onConfirm: () {
                       Navigator.of(context).pop();
-                      TopNotification.show(context, 'User reported');
+                      TopNotification.show(context, 'did you even read that dumbo?');
                     },
                   ),
                 );

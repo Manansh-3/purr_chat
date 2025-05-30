@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:audioplayers/audioplayers.dart';
-
+import 'package:chat_app/services/animation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -241,6 +241,7 @@ class ChatBubble extends StatelessWidget {
   final bool isMe;
   final String timestamp;
   final bool showSeen;
+  final bool animate; // NEW
 
   const ChatBubble({
     super.key,
@@ -248,6 +249,7 @@ class ChatBubble extends StatelessWidget {
     required this.isMe,
     required this.timestamp,
     required this.showSeen,
+    this.animate = false, // default: false
   });
 
   @override
@@ -257,25 +259,29 @@ class ChatBubble extends StatelessWidget {
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
             bottomLeft: Radius.circular(16),
-            bottomRight: Radius.circular(2), // WhatsApp tail effect
+            bottomRight: Radius.circular(2),
           )
         : const BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
             bottomRight: Radius.circular(16),
-            bottomLeft: Radius.circular(2), // WhatsApp tail effect
+            bottomLeft: Radius.circular(2),
           );
 
-    return Padding(
+    Widget bubble = Padding(
+      key: ValueKey(text + timestamp), // still needed for ordering
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
         child: Column(
-          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
               decoration: BoxDecoration(
                 color: isMe ? primary : Colors.grey.shade200,
                 borderRadius: borderRadius,
@@ -303,17 +309,32 @@ class ChatBubble extends StatelessWidget {
             ),
             if (showSeen)
               Padding(
-                padding: EdgeInsets.only(top: 2, right: 4),
+                padding: const EdgeInsets.only(top: 2, right: 4),
                 child: Text(
                   "Seen",
-                  style: TextStyle(fontSize: 12, color: primary, fontStyle: FontStyle.italic),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: primary,
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ),
           ],
         ),
       ),
     );
+
+    // 🔥 Only wrap with animation if animate = true
+    return animate
+        ? AnimatedSwitcher(
+            duration: const Duration(milliseconds: 350),
+            transitionBuilder: (child, animation) => AppAnimations.slideFade(
+              child: child,
+              animation: animation,
+              beginOffset: isMe ? const Offset(0.5, 0) : const Offset(-0.5, 0),
+            ),
+            child: bubble,
+          )
+        : bubble;
   }
 }
-
-

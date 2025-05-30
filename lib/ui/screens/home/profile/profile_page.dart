@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:math';
-
+import 'package:chat_app/main.dart';
 import 'package:chat_app/core/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -154,6 +154,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () async {
               print('[logout] Logging out...');
               await FirebaseAuth.instance.signOut();
+              lifecycleReactor?.dispose();
+              lifecycleReactor = null;
               Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
             },
           ),
