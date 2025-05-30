@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> _friends = [];
   bool _isLoading = true;
   bool _hasPendingRequests = false;
+  var debugPrintRebuildDirtyWidgets = true;
 
   @override
   void initState() {
@@ -351,7 +352,7 @@ int _compareVersions(String current, String latest) {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
                         child: Container(
                           decoration: BoxDecoration(
                             color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.55),
